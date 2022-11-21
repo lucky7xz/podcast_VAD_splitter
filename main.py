@@ -1,17 +1,15 @@
-#read text file that contains the paths to the wav file folders
-import glob, os
 
-from split_wav_folder import split_podcast_folders
+from split_wav_folder import split_podcast_folders, clear_split_done
 #from transcribe_pod_folders import transcribe_splitPodcast_folders
 
 
 #--- Split wav files into segments
 def read_and_split():
+ 
     # read text file that contains the paths to the wav file folders
     with open("podcast_folders.txt", "r") as f:
         podcast_folders = f.readlines()
-
-    # remove whitespace characters like `\n` at the end of each line
+    
     podcast_folders = [x.strip() for x in podcast_folders]
 
 
@@ -22,6 +20,7 @@ def read_and_split():
 
 
 read_and_split()
+#clear_split_done() # only if we want to split the same folders again
 
 #------ Transcribe segments and add punctuation
 

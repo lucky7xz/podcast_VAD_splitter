@@ -23,7 +23,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         "  WAV Files len : ", len(wav_list), "\n")
   
 
-#-------------------------------------------------------------------------
+#-------------------- Check files to be split --------------------
   if set(wav_list) == set(file_list) and len(wav_list) > 0:
    
       print("\n All files in Folder are in .wav Format. Picking 4 random files to check sample rate (we need 16k) \n")
@@ -58,13 +58,12 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       print("Please convert them to .wav and try again. Only .wav files are allowed in folders! \n") 
       return
 
-#--------------------------------------------------------------------------
+#-----------------------Initiate Splitting-----------------------
   wav_list = glob.glob(dirName+"/*.wav")
 
   split_dirName = dirName + "_split"
 
   list_len = len(wav_list)
-
   pivot = 1
 
   if not os.path.exists(split_dirName):
@@ -77,17 +76,19 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       print("Deleting old files")
       old_wav_files = glob.glob(split_dirName + "/*")
       
+
+      # because we check for finished splits with split_done.txt, we want to delete incomplete splits
       for file in old_wav_files: shutil.rmtree(file)
         
-      #for file in old_wav_files: os.remove(file)
-
+     
 #--------------------------------------------------------------------------
   for wav_file in wav_list:
 
     start_time = time.time()
+
+    print("\n--- Splitting: ", wav_file, "...")
     wav_name = os.path.basename(wav_file).replace(".wav","")
 
-    print("--- Splitting: ", wav_name) # for debugging
     
     try:
       # create aux Directories
@@ -116,14 +117,18 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
     # max len (in seconds), close_th, count (needs to be zero)
 
-    generate_splits(split_dirName, wav_file, max_len, close_th, 0) # close_th should probably be adjusted with custom segment-merge function
-    #generate_splits(dirName, wav_file, 210, 1.65, 0)
+    generate_splits(split_dirName, wav_file, max_len, close_th, 0) 
+    #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
 
     print("Split", pivot, "/", list_len)
     pivot += 1
     
     print("---" ,time.time() - start_time , " seconds  for splitting " + wav_file + "---"  + "\n")
-  
+
+
+
+  # Folder is split. Delete aux Directories
+
   old_vad_files = glob.glob("vad_files/*")
   old_temp_files = glob.glob("temp_files/*")
   old_checkpoint_files = glob.glob("pretrained_model_checkpoints/*")
@@ -137,8 +142,17 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
 def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
 
-    split_done = []
 
+
+    if os.path.exists("split_done.txt"):
+        with open("split_done.txt", "r") as f:
+            split_done = f.readlines()
+            split_done = [x.strip() for x in split_done]
+    
+    else:
+    
+        with open("split_done.txt", "w") as f:
+          f.write("")
 
     with open (path_to_folders, "r") as f:
         folder_names = f.readlines()
@@ -149,13 +163,25 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
     fcount = 1
 
     for folder_name in folder_names:
-        if folder_name[0] == "#":
+
+        # if folder is already split, skip it
+        if folder_name in split_done:
+            print("Folder", folder_name, "already split. Skipping...")
             continue
+
         else:
             split_podcast_folder(folder_name, max_len, close_th, testing)
-            split_done.append(folder_name)
-            print("Split Done: ", split_done, fcount,"/",length)
+            
+            with open("split_done.txt", "a") as f:
+                f.write(folder_name + "\n")
 
-    with open("split_done.txt", "w") as f:
-        for item in split_done:
-            f.write(item)
+            print("Folder", folder_name, "split. Progress:", fcount, "/", length)
+
+
+def clear_split_done():
+    if os.path.exists("split_done.txt"):
+        os.remove("split_done.txt")
+        print("split_done.txt deleted")
+    else:
+        print("split_done.txt does not exist")
+
