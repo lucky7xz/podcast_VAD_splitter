@@ -16,6 +16,12 @@ VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretr
 #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
 
 
+def gpu_split():
+  dev = "cuda"
+
+  lol = "do some other stuff to swtich to gpu, see gcolab"
+  return dev
+
 def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False): #1.25
   
   """

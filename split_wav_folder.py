@@ -1,8 +1,9 @@
-import os, random, time,glob, shutil
+import os, random, time, glob, shutil
 import librosa
+import pandas as pd
 
 
-from VAD_wav_splitter import generate_splits
+from VAD_wav_splitter import generate_splits, gpu_split
 
 
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
@@ -11,6 +12,18 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   file_list = glob.glob(dirName+"/*")
   wav_list = glob.glob(dirName+"/*.wav")
+
+  # read in split_log csv file
+  if os.path.exists("split_log.csv"):
+      split_log = pd.read_csv("split_log.csv", sep=";")
+
+  else:
+    #create new csv file
+    split_log = pd.DataFrame(columns=["folder", "episode", "done", "gpu_split", "split_count", "split_time","episode_time"])
+    split_log.to_csv("split_log.csv", sep=";", index=False)
+
+     #split_log = folder, ep, done, gpu_split, split_count, total_time, split_time, aprox_total_time
+
 
 
   # clean up checkpoint files created by VAD model (if any)
@@ -40,7 +53,6 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       duration_of_picks = [librosa.get_duration(filename=sr_test_pick) for sr_test_pick in sr_test_picks] 
 
 
-
       if not all(sr == 16000 for sr in sr_of_picks):
 
         print("Some wav. files need resampling. SR of random picks :", sr_of_picks)
@@ -57,6 +69,17 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       print("Files that are not .wav: ", set(file_list) - set(wav_list))
       print("Please convert them to .wav and try again. Only .wav files are allowed in folders! \n") 
       return
+
+  '''
+  split_log = folder, ep, done, gpu_split, split_count, total_time, split_time, aprox_total_time
+
+  done, gpu split , total time, split time, aprox total time, are init as 0, if non-existet before.
+  so in this case, clean log file would mean delete. 
+
+  use df to select rows with folder name. then check if ep is done. if so, skip.
+  order ist not a requirement
+
+  ''' 
 
 #-----------------------Initiate Splitting-----------------------
   wav_list = glob.glob(dirName+"/*.wav")
@@ -78,11 +101,13 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       
 
       # because we check for finished splits with split_done.txt, we want to delete incomplete splits
-      for file in old_wav_files: shutil.rmtree(file)
+      for file in old_wav_files: shutil.rmtree(file) ######
         
-     
-#--------------------------------------------------------------------------
+   
+#------------------------------------------------------------------
   for wav_file in wav_list:
+
+
 
     start_time = time.time()
 
@@ -184,4 +209,3 @@ def clear_split_done():
         print("split_done.txt deleted")
     else:
         print("split_done.txt does not exist")
-
