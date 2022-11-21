@@ -1,59 +1,61 @@
-import os, random, time, shutil
-from tqdm import tqdm
-
+import os, random, time,glob, shutil
 import librosa
-import soundfile as sf
-import glob
+
 
 from VAD_wav_splitter import generate_splits
+
 
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   folder_start_time = time.time()
 
-  total_folder_duration = 0
-  dur_print_switch = False
-
-  resample_switch = 0
-
   file_list = glob.glob(dirName+"/*")
   wav_list = glob.glob(dirName+"/*.wav")
 
 
-  print(" All Files len: ", len(file_list),"\n", " WAV Files len : ", len(wav_list), "\n",)
-  print("Folder: ", dirName)
+  # clean up checkpoint files created by VAD model (if any)
+  if os.path.exists("pretrained_model_checkpoints"):
+    cp_list = glob.glob("pretrained_model_checkpoints/*")
+    for file in cp_list: os.remove(file)
+
+  print("-------- Folder to be split: ", dirName, "--------")
+  print("All Files len: ", len(file_list),"\n", 
+        "  WAV Files len : ", len(wav_list), "\n")
   
 
 #-------------------------------------------------------------------------
   if set(wav_list) == set(file_list) and len(wav_list) > 0:
    
-      print("\n All files in Folder are in .wav Format. Checking the sample rate (we need 16k) \n")
+      print("\n All files in Folder are in .wav Format. Picking 4 random files to check sample rate (we need 16k) \n")
 
-      sr_test_pick = random.choice([wav for wav in wav_list])
-      sr_test1 = librosa.get_samplerate(sr_test_pick)
-      sr_test_pick = random.choice([wav for wav in wav_list])
-      sr_test2 = librosa.get_samplerate(sr_test_pick)
-      sr_test_pick = random.choice([wav for wav in wav_list])
-      sr_test3 = librosa.get_samplerate(sr_test_pick)
+      sr_test_picks = [random.choice([wav for wav in wav_list]),
+                       random.choice([wav for wav in wav_list]),
+                       random.choice([wav for wav in wav_list]),
+                       random.choice([wav for wav in wav_list])] 
 
-      # here we can do a for _ in 3 loop and check with all()
+      sr_of_picks = [librosa.get_samplerate(sr_test_pick) for sr_test_pick in sr_test_picks]
+
+      # while we're at it, let's get the duration of the random files
+
+      duration_of_picks = [librosa.get_duration(filename=sr_test_pick) for sr_test_pick in sr_test_picks] 
 
 
-      if sr_test1 != 16000 or sr_test2 != 16000 or sr_test3 != 16000:
 
-        print("No. We need to resample our data. SR of random picks :", sr_test1, sr_test2, sr_test3)
-        print("mp3 to wav conversion is slow with librosa and torchaudio. Consider other software in pre-step.")
+      if not all(sr == 16000 for sr in sr_of_picks):
+
+        print("Some wav. files need resampling. SR of random picks :", sr_of_picks)
+        print("Sometimes other SRs could work too, but 16k is optimal \n")
 
       else:
 
-        print("Samplerate is 16k. No need to resample. SR of random picks :", sr_test1, sr_test2, sr_test3)
-  
+        print("Samplerate of random picks is 16k. No need to resample. SR of random picks :", sr_of_picks)
+        print("Aprox. duration of all .wav files in folder:", (sum(duration_of_picks)/4)* len(wav_list) / 60 / 60 , "hours \n")
+ 
   else:
 
-      print("\n Some/all files in Folder are not in .wav Format. Only .wav files are supported. \n")
-      # print files that are not .wav
+      print("Some/all files in Folder are not in .wav Format. Only .wav files are supported. \n")
       print("Files that are not .wav: ", set(file_list) - set(wav_list))
-      print("Please convert them to .wav and try again. \n") 
+      print("Please convert them to .wav and try again. Only .wav files are allowed in folders! \n") 
       return
 
 #--------------------------------------------------------------------------
@@ -75,10 +77,8 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       print("Deleting old files")
       old_wav_files = glob.glob(split_dirName + "/*")
       
-      for file in old_wav_files: 
-        #os.remove(file)
-        shutil.rmtree(file) # use for windows       
-      
+      for file in old_wav_files: shutil.rmtree(file)
+        
       #for file in old_wav_files: os.remove(file)
 
 #--------------------------------------------------------------------------
@@ -87,7 +87,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     start_time = time.time()
     wav_name = os.path.basename(wav_file).replace(".wav","")
 
-    print("----file: ", wav_name) # for debugging
+    print("--- Splitting: ", wav_name) # for debugging
     
     try:
       # create aux Directories
@@ -159,7 +159,3 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
     with open("split_done.txt", "w") as f:
         for item in split_done:
             f.write(item)
-      
-    
-    #clean_temp_files()
-    
