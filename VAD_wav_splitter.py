@@ -9,18 +9,26 @@ import soundfile as sf
 from speechbrain.pretrained import VAD
 
 
-#def for cpu-gpu switch (speechbrain filce edit needed)
-# use cpu for now
-
+# remove this, it's not needed
 VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
 #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
 
+# use cpu or gpu for splitting 
 
-def gpu_split():
-  dev = "cuda"
 
-  lol = "do some other stuff to swtich to gpu, see gcolab"
-  return dev
+def dev_split(dev="cpu"):
+
+    if dev == "cpu":
+        VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
+
+    elif dev == "gpu":
+        VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
+        #bam bam
+
+    else:
+        print("Please choose between cpu or gpu for splitting")
+  
+    return dev
 
 def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False): #1.25
   

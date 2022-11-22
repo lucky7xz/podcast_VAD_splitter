@@ -6,16 +6,22 @@ import pandas as pd
 from VAD_wav_splitter import generate_splits, gpu_split
 
 
+
+
+
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   folder_start_time = time.time()
-
+  
   file_list = glob.glob(dirName+"/*")
   wav_list = glob.glob(dirName+"/*.wav")
 
-  # read in split_log csv file
-  if os.path.exists("split_log.csv"):
-      split_log = pd.read_csv("split_log.csv", sep=";")
+
+  #create new json, or import existing json.
+  if True:
+    pass #-------- !!!!!
+  # read in transcription_log.json
+  # also output transcriptions to podcastName_transc
 
   else:
     #create new csv file
@@ -100,7 +106,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       old_wav_files = glob.glob(split_dirName + "/*")
       
 
-      # because we check for finished splits with split_done.txt, we want to delete incomplete splits
+      # REMOVE - WE CHECK FOR FILES
       for file in old_wav_files: shutil.rmtree(file) ######
         
    
@@ -146,6 +152,8 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
 
     print("Split", pivot, "/", list_len)
+    #EDIT prep dict for json
+
     pivot += 1
     
     print("---" ,time.time() - start_time , " seconds  for splitting " + wav_file + "---"  + "\n")
@@ -167,10 +175,40 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
 def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
 
+    '''
+
+json dict
 
 
-    if os.path.exists("split_done.txt"):
-        with open("split_done.txt", "r") as f:
+podcasts {
+
+  "on_with kara": files:
+
+
+                          VMASSCVV: title, split_type, split_count, split_duration, transcription
+
+
+
+
+                      
+
+                  split_done:
+                  split_type:
+                  transc_done:
+                  transc_type:
+                  aprox_podcast_duration:
+
+}
+
+_folders init podcast_name
+
+generate splits() - return 
+
+
+'''
+
+    if os.path.exists("split_done.txt"): #EDIT
+        with open("split_done.txt", "r") as f:#EDIT
             split_done = f.readlines()
             split_done = [x.strip() for x in split_done]
     
@@ -190,7 +228,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
     for folder_name in folder_names:
 
         # if folder is already split, skip it
-        if folder_name in split_done:
+        if folder_name in split_done:     #EDIT
             print("Folder", folder_name, "already split. Skipping...")
             continue
 
@@ -203,9 +241,9 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
             print("Folder", folder_name, "split. Progress:", fcount, "/", length)
 
 
-def clear_split_done():
-    if os.path.exists("split_done.txt"):
-        os.remove("split_done.txt")
-        print("split_done.txt deleted")
+def clear_split_done(): #EDIT 
+    if os.path.exists("split_done.txt"): #EDIT
+        os.remove("split_done.txt") #EDIT
+        print("split_done.txt deleted") #EDIT
     else:
         print("split_done.txt does not exist")

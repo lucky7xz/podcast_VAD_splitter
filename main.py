@@ -1,5 +1,6 @@
 
 from split_wav_folder import split_podcast_folders, clear_split_done
+from VAD_wav_splitter import dev_split
 #from transcribe_pod_folders import transcribe_splitPodcast_folders
 
 
