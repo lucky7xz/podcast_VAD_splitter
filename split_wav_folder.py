@@ -3,32 +3,23 @@ import librosa
 
 import json
 
-from VAD_wav_splitter import generate_splits, gpu_split
-
+from VAD_wav_splitter import generate_splits, setup_split_device
 
 
 
 
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
+
+  device = setup_split_device("cpu") # "gpu" for cuda
+
   folder_start_time = time.time()
   
   file_list = glob.glob(dirName+"/*")
   wav_list = glob.glob(dirName+"/*.wav")
 
-
-  #create new json, or import existing json.
-  if True:
-    pass #-------- !!!!!
-  # read in transcription_log.json
-  # also output transcriptions to podcastName_transc
-
-  else:
-    #create new csv file
-    pass
-
-     #split_log = folder, ep, done, gpu_split, split_count, total_time, split_time, aprox_total_time
-
+  
+  # log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "aprox_podcast_duration_hrs": 0}
 
 
   # clean up checkpoint files created by VAD model (if any)
@@ -55,7 +46,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
       # while we're at it, let's get the duration of the random files
 
-      duration_of_picks = [librosa.get_duration(filename=sr_test_pick) for sr_test_pick in sr_test_picks] 
+      duration_of_picks = [librosa.get_duration(sr_test_pick) for sr_test_pick in sr_test_picks] 
 
 
       if not all(sr == 16000 for sr in sr_of_picks):
@@ -63,10 +54,26 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         print("Some wav. files need resampling. SR of random picks :", sr_of_picks)
         print("Sometimes other SRs could work too, but 16k is optimal \n")
 
+
       else:
 
         print("Samplerate of random picks is 16k. No need to resample. SR of random picks :", sr_of_picks)
-        print("Aprox. duration of all .wav files in folder:", (sum(duration_of_picks)/4)* len(wav_list) / 60 / 60 , "hours \n")
+
+        #--------update log
+        with open ("trasctioption_log", "r") as f:
+          log = json.load(f)
+
+        aprox_duration = (sum(duration_of_picks)/4)* len(wav_list) / 3600
+
+
+        log[dirName]["aprox_podcast_duration_hrs"] = aprox_duration
+
+        with open ("trasctioption_log", "w") as f:
+          json.dump(log, f)
+        #--------------------
+
+
+        print("Aprox. duration of all .wav files in folder:", aprox_duration , "hours \n")
  
   else:
 
@@ -78,29 +85,46 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
 #-----------------------Initiate Splitting-----------------------
   wav_list = glob.glob(dirName+"/*.wav")
+  
+  
+  with open("trasctioption_log", "r") as f:
+    log = json.load(f)
+  
+  print("Computing wav files that need to be split (according to log)...")
+  wav_names_left = [key for key in log[dirName]["files"].keys() if log[dirName]["files"][key]["split_done"] == False]
 
-  split_dirName = dirName + "_split"
+  print("Files left to be split in this folder: ", len(wav_names_left), "\n")
 
-  list_len = len(wav_list)
+  wav_file_iteration = [wav_file for wav_file in wav_list if os.path.basename(wav_file).replace(".wav","") in wav_names_left]
+
+  
+  list_len = len(wav_names_left)
   pivot = 1
+
+  split_dirName = dirName + "_split" # new folder for split episodes  
 
   if not os.path.exists(split_dirName):
       # Create split Directory
       os.mkdir(split_dirName)
       print("Directory " , split_dirName ,  " Created ") 
 
-  else:
+  else:# whhaaat?
       print("Directory " , split_dirName ,  " already exists")
-      print("Deleting old files")
-      old_wav_files = glob.glob(split_dirName + "/*")
+
+      print("Deleting files in unfinised folders...")
+      split_subFolders = glob.glob(split_dirName + "/*")
+
+      # if file in wav_file_iteration (with split_done = False) is in split_folders, it means split was interrupted
+      bad_wav_folders = [file for file in wav_file_iteration if os.path.basename(file).replace(".wav","") in split_subFolders]
       
 
-      # REMOVE - WE CHECK FOR FILES
-      for file in old_wav_files: shutil.rmtree(file) ######
-        
-   
+      #   delete all files in bad_wav_folders (.rmtree removes individual wav splits too)
+      for file in bad_wav_folders: shutil.rmtree(file) ######
+
+  
+
 #------------------------------------------------------------------
-  for wav_file in wav_list:
+  for wav_file in wav_file_iteration:
 
 
 
@@ -124,8 +148,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       for file in old_temp_files: os.remove(file)
 
     try:
-      # Create split sub-Directory
-        #subdirName = dirName + "/" + wav_name
+      
         subdirName = os.path.join(split_dirName, wav_name)
         os.mkdir(subdirName)
         print("Directory " , subdirName ,  " Created ") 
@@ -135,18 +158,37 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         old_dir_files = glob.glob(subdirName+"/*")
         for file in old_dir_files: os.remove(file)
 
-    # max len (in seconds), close_th, count (needs to be zero)
+    #---- max len (in seconds), close_th, count (needs to be zero)-------------------
 
-    generate_splits(split_dirName, wav_file, max_len, close_th, 0) 
+    generate_splits(split_dirName, wav_file, max_len, close_th, 0)
+    
+    #--------------------------------------------------------------------------------
+
+    split_time = (time.time() - start_time) / 60
+    split_count = len(glob.glob(subdirName+"/*"))
+
+    with open ("trasctioption_log", "r") as f:
+      log = json.load(f)
+
+# VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
+
+    #create entry for episode in log
+    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":"",}# "transc_type": "", "transcription": ""}
+
+    with open ("trasctioption_log", "w") as f:
+      json.dump(log, f)
+
+
+    # wave name as key, split count as value, add to json
+
     #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
 
     print("Split", pivot, "/", list_len)
     #EDIT prep dict for json
 
-    pivot += 1
-    
-    print("---" ,time.time() - start_time , " seconds  for splitting " + wav_file + "---"  + "\n")
 
+    print("---" ,split_time, " seconds  for splitting " + wav_file + "---"  + "\n")
+    pivot += 1
 
 
   # Folder is split. Delete aux Directories
@@ -207,7 +249,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
         
         else:
 
-          #--- initiate log dict for folder
+          #--- initiate log dict for folder (aprox_podcast_duration is added in split_podcast_folder function)
             log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "aprox_podcast_duration_hrs": 0}
 
             # update json
@@ -233,17 +275,19 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
 # contienue cuz done, continue with nex ep, init as 0, if non-existet before.
 
 
-def clear_split_done(): #EDIT 
-    if os.path.exists("split_done.txt"): #EDIT
-        os.remove("split_done.txt") #EDIT
-        print("split_done.txt deleted") #EDIT
-    else:
-        print("split_done.txt does not exist")
+def clear_log():
+
+  if True:
+    pass
+
+  return 0
 
 
 
 
-    '''
+
+
+  '''
 
 json dict
 

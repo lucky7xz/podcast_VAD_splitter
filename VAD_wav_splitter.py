@@ -23,7 +23,7 @@ def setup_split_device(dev="cpu"):
 
     elif dev == "gpu":
         VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
-        #bam bam
+        #bam bam @ yaml. check before calling function with dev="gpu"
 
     else:
         print("Please choose between cpu or gpu for splitting")
