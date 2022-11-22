@@ -94,7 +94,8 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
   wav_names_left = [key for key in log[dirName]["files"].keys() if log[dirName]["files"][key]["split_done"] == False]
 
   print("Files left to be split in this folder: ", len(wav_names_left), "\n")
-
+  
+  #wav_names_left X wav_list = wav_paths_left_
   wav_file_iteration = [wav_file for wav_file in wav_list if os.path.basename(wav_file).replace(".wav","") in wav_names_left]
 
   
@@ -108,13 +109,13 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       os.mkdir(split_dirName)
       print("Directory " , split_dirName ,  " Created ") 
 
-  else:# whhaaat?
+  else:
       print("Directory " , split_dirName ,  " already exists")
 
       print("Deleting files in unfinised folders...")
       split_subFolders = glob.glob(split_dirName + "/*")
 
-      # if file in wav_file_iteration (with split_done = False) is in split_folders, it means split was interrupted
+      # if file in wav_file_iteration (with split_done = False) is in split_subFolders, it means split was interrupted
       bad_wav_folders = [file for file in wav_file_iteration if os.path.basename(file).replace(".wav","") in split_subFolders]
       
 
@@ -154,14 +155,16 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         print("Directory " , subdirName ,  " Created ") 
 
     except FileExistsError:
+        # this exceptions will never be raised (i think)
         print("Directory " , subdirName ,  " already exists")
-        old_dir_files = glob.glob(subdirName+"/*")
-        for file in old_dir_files: os.remove(file)
+        
 
     #---- max len (in seconds), close_th, count (needs to be zero)-------------------
 
     generate_splits(split_dirName, wav_file, max_len, close_th, 0)
-    
+    #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
+
+
     #--------------------------------------------------------------------------------
 
     split_time = (time.time() - start_time) / 60
@@ -173,18 +176,12 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 # VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
 
     #create entry for episode in log
-    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":"",}# "transc_type": "", "transcription": ""}
+    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
 
     with open ("trasctioption_log", "w") as f:
       json.dump(log, f)
-
-
-    # wave name as key, split count as value, add to json
-
-    #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
-
-    print("Split", pivot, "/", list_len)
-    #EDIT prep dict for json
+  
+    print("Split episode", pivot, " out of ", list_len, "(left)")
 
 
     print("---" ,split_time, " seconds  for splitting " + wav_file + "---"  + "\n")
@@ -241,7 +238,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
                 log = json.load(f)
 
             log[folder_name]["split_done"] = True
-            log[folder_name]["split_count"] = len(log[folder_name]["files"].keys())
+            log[folder_name]["ep_count"] = len(log[folder_name]["files"].keys())
             
             with open("transcription_log.json", "w") as f:
                 json.dump(log, f)
@@ -264,15 +261,13 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
                 log = json.load(f)
 
             log[folder_name]["split_done"] = True
-            log[folder_name]["split_count"] = len(log[folder_name]["files"].keys())
+            log[folder_name]["ep_count"] = len(log[folder_name]["files"].keys())
             
             with open("transcription_log.json", "w") as f:
                 json.dump(log, f)
           #--------------------
 
             print("Folder", folder_name, "split. Progress:", fcount, "/", length)
-
-# contienue cuz done, continue with nex ep, init as 0, if non-existet before.
 
 
 def clear_log():
@@ -286,10 +281,9 @@ def clear_log():
 
 
 
-
   '''
 
-json dict
+json dict structure and init
 
 
 podcasts {
@@ -312,11 +306,11 @@ podcasts {
 
 }
 
-main. init .json
+main. create empty .json
 
-_folders -  init podcast_name, set split done
+split_folders -  init podcast_name = key, set split done, set ep count
 
-__folder - add info about episode, add info about whole folder
+split__folder - set aprox folder duration, add info about episode - set etc /episode
 
 
 '''
