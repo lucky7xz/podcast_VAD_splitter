@@ -1,6 +1,7 @@
 
 from split_wav_folder import split_podcast_folders, clear_split_done
-from VAD_wav_splitter import dev_split
+from VAD_wav_splitter import setup_split_device
+import os
 #from transcribe_pod_folders import transcribe_splitPodcast_folders
 
 
@@ -16,6 +17,15 @@ def read_and_split():
 
     max_len = 210 # max length of segments in seconds
     close_th = 1.65 # threshold for merging segments (in seconds)
+
+
+    # Init json file for logging split info (and maybe transcription info)
+    if os.path.exists("transcription_log.json"):
+        pass
+    
+    else:
+        with open("transcription_log.json", "w") as f:
+            f.write("{}")
 
     split_podcast_folders("podcast_folders.txt", max_len, close_th)
 

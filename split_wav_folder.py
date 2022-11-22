@@ -1,7 +1,7 @@
 import os, random, time, glob, shutil
 import librosa
-import pandas as pd
 
+import json
 
 from VAD_wav_splitter import generate_splits, gpu_split
 
@@ -25,8 +25,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   else:
     #create new csv file
-    split_log = pd.DataFrame(columns=["folder", "episode", "done", "gpu_split", "split_count", "split_time","episode_time"])
-    split_log.to_csv("split_log.csv", sep=";", index=False)
+    pass
 
      #split_log = folder, ep, done, gpu_split, split_count, total_time, split_time, aprox_total_time
 
@@ -76,16 +75,6 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
       print("Please convert them to .wav and try again. Only .wav files are allowed in folders! \n") 
       return
 
-  '''
-  split_log = folder, ep, done, gpu_split, split_count, total_time, split_time, aprox_total_time
-
-  done, gpu split , total time, split time, aprox total time, are init as 0, if non-existet before.
-  so in this case, clean log file would mean delete. 
-
-  use df to select rows with folder name. then check if ep is done. if so, skip.
-  order ist not a requirement
-
-  ''' 
 
 #-----------------------Initiate Splitting-----------------------
   wav_list = glob.glob(dirName+"/*.wav")
@@ -169,11 +158,90 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
   for file in old_temp_files: os.remove(file)
   for file in old_checkpoint_files: os.remove(file)
 
-  print("---" ,time.time() - folder_start_time , " seconds  for splitting entire folder --- \n")
+  print("---" ,time.time() - folder_start_time , " seconds  for splitting entire folder --- \n(some files might be done in prev iterations, check sum of ep logs to determine true duration)  \n")
 
 
 
 def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
+
+
+    with open (path_to_folders, "r") as f:
+        folder_names = f.readlines()
+        folder_names = [x.strip() for x in folder_names]
+
+        length = len(folder_names)
+    
+    fcount = 1
+
+    for folder_name in folder_names:
+        
+        #load transcripton _log json
+
+        with open("transcription_log.json", "r") as f:
+            log = json.load(f)
+
+        #check if folder name is in the set of keys in the log
+        
+        if folder_name in log.keys():
+        
+            if log[folder_name]["split_done"] == True:
+              print("Folder", folder_name, "already split. Skipping...")
+            
+          #
+            elif log[folder_name]["split_done"] == False: 
+
+              #continue splitting episodes
+              split_podcast_folder(folder_name, max_len, close_th, testing)
+
+             # if function terminates, update split_done to True in log file
+             #--------update log
+              with open("transcription_log.json", "r") as f:
+                log = json.load(f)
+
+            log[folder_name]["split_done"] = True
+            log[folder_name]["split_count"] = len(log[folder_name]["files"].keys())
+            
+            with open("transcription_log.json", "w") as f:
+                json.dump(log, f)
+          #--------------------
+        
+        else:
+
+          #--- initiate log dict for folder
+            log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "aprox_podcast_duration_hrs": 0}
+
+            # update json
+            with open("transcription_log.json", "w") as f:
+                json.dump(log, f)
+
+            split_podcast_folder(folder_name, max_len, close_th, testing)
+          
+          # if function terminates, update split_done to True in log file
+          #--------update log
+            with open("transcription_log.json", "r") as f:
+                log = json.load(f)
+
+            log[folder_name]["split_done"] = True
+            log[folder_name]["split_count"] = len(log[folder_name]["files"].keys())
+            
+            with open("transcription_log.json", "w") as f:
+                json.dump(log, f)
+          #--------------------
+
+            print("Folder", folder_name, "split. Progress:", fcount, "/", length)
+
+# contienue cuz done, continue with nex ep, init as 0, if non-existet before.
+
+
+def clear_split_done(): #EDIT 
+    if os.path.exists("split_done.txt"): #EDIT
+        os.remove("split_done.txt") #EDIT
+        print("split_done.txt deleted") #EDIT
+    else:
+        print("split_done.txt does not exist")
+
+
+
 
     '''
 
@@ -185,7 +253,7 @@ podcasts {
   "on_with kara": files:
 
 
-                          VMASSCVV: title, split_type, split_count, split_duration, transcription
+                          VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
 
 
 
@@ -200,50 +268,11 @@ podcasts {
 
 }
 
-_folders init podcast_name
+main. init .json
 
-generate splits() - return 
+_folders -  init podcast_name, set split done
+
+__folder - add info about episode, add info about whole folder
 
 
 '''
-
-    if os.path.exists("split_done.txt"): #EDIT
-        with open("split_done.txt", "r") as f:#EDIT
-            split_done = f.readlines()
-            split_done = [x.strip() for x in split_done]
-    
-    else:
-    
-        with open("split_done.txt", "w") as f:
-          f.write("")
-
-    with open (path_to_folders, "r") as f:
-        folder_names = f.readlines()
-        folder_names = [x.strip() for x in folder_names]
-
-        length = len(folder_names)
-    
-    fcount = 1
-
-    for folder_name in folder_names:
-
-        # if folder is already split, skip it
-        if folder_name in split_done:     #EDIT
-            print("Folder", folder_name, "already split. Skipping...")
-            continue
-
-        else:
-            split_podcast_folder(folder_name, max_len, close_th, testing)
-            
-            with open("split_done.txt", "a") as f:
-                f.write(folder_name + "\n")
-
-            print("Folder", folder_name, "split. Progress:", fcount, "/", length)
-
-
-def clear_split_done(): #EDIT 
-    if os.path.exists("split_done.txt"): #EDIT
-        os.remove("split_done.txt") #EDIT
-        print("split_done.txt deleted") #EDIT
-    else:
-        print("split_done.txt does not exist")

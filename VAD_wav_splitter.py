@@ -16,7 +16,7 @@ VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretr
 # use cpu or gpu for splitting 
 
 
-def dev_split(dev="cpu"):
+def setup_split_device(dev="cpu"):
 
     if dev == "cpu":
         VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
