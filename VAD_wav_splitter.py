@@ -9,22 +9,22 @@ import soundfile as sf
 from speechbrain.pretrained import VAD
 
 
-# remove this, it's not needed
+# needed for new. if we only call function below, we get TypeError from VAD
 VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
 #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
 
 # use cpu or gpu for splitting 
 
 
-def setup_split_device(dev="cpu"):
+def setup_split_device(dev="cpu", VAD=VAD):
 
     if dev == "cpu":
-        VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
-
+        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
+        pass
     elif dev == "gpu":
         VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
         #bam bam @ yaml. check before calling function with dev="gpu"
-
+        # not ready yet
     else:
         print("Please choose between cpu or gpu for splitting")
   
@@ -53,7 +53,7 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
 
   else:
     
- 
+    
     boundaries = VAD.get_speech_segments(wav_file) # returns a list of speech boundaries
     boundaries = VAD.merge_close_segments(boundaries, close_th) # used to merge close segments
                       # |-------->  This should be replaced by costum function @ VAD_boundaries_config.py

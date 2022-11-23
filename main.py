@@ -3,7 +3,7 @@ from split_wav_folder import split_podcast_folders
 import os
 #from transcribe_pod_folders import transcribe_splitPodcast_folders
 
-
+from speechbrain.pretrained import VAD
 #--- Split wav files into segments
 def read_and_split():
  

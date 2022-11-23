@@ -7,7 +7,6 @@ from VAD_wav_splitter import generate_splits, setup_split_device
 
 
 
-
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
 
@@ -46,7 +45,8 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
       # while we're at it, let's get the duration of the random files
 
-      duration_of_picks = [librosa.get_duration(sr_test_pick) for sr_test_pick in sr_test_picks] 
+      
+      duration_of_picks = [librosa.get_duration(filename=sr_test_pick) for sr_test_pick in sr_test_picks] 
 
 
       if not all(sr == 16000 for sr in sr_of_picks):
@@ -60,7 +60,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         print("Samplerate of random picks is 16k. No need to resample. SR of random picks :", sr_of_picks)
 
         #--------update log
-        with open ("trasctioption_log", "r") as f:
+        with open ("transcription_log.json", "r") as f:
           log = json.load(f)
 
         aprox_duration = (sum(duration_of_picks)/4)* len(wav_list) / 3600
@@ -87,19 +87,19 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
   wav_list = glob.glob(dirName+"/*.wav")
   
   
-  with open("trasctioption_log", "r") as f:
+  with open("transcription_log.json", "r") as f:
     log = json.load(f)
   
   print("Computing wav files that need to be split (according to log)...")
-  wav_names_left = [key for key in log[dirName]["files"].keys() if log[dirName]["files"][key]["split_done"] == False]
+  wav_names_done = [key for key in log[dirName]["files"].keys() if log[dirName]["files"][key]["split_done"] == True ]
 
-  print("Files left to be split in this folder: ", len(wav_names_left), "\n")
+  print("Files with split_done == True  in this folder: ", len(wav_names_done), "\n")
   
-  #wav_names_left X wav_list = wav_paths_left_
-  wav_file_iteration = [wav_file for wav_file in wav_list if os.path.basename(wav_file).replace(".wav","") in wav_names_left]
+  #wav_names_done (not) X wav_list = wav_paths_left
+  wav_file_iteration = [wav_file for wav_file in wav_list if os.path.basename(wav_file).replace(".wav","") not in wav_names_done]
 
   
-  list_len = len(wav_names_left)
+  list_len = len(wav_list) - len(wav_names_done)
   pivot = 1
 
   split_dirName = dirName + "_split" # new folder for split episodes  
@@ -111,17 +111,21 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   else:
       print("Directory " , split_dirName ,  " already exists")
+      split_subFolders = glob.glob(split_dirName + "/*")
+      print("Subfolders in split folder: ", split_subFolders) # for debugging
 
       print("Deleting files in unfinised folders...")
-      split_subFolders = glob.glob(split_dirName + "/*")
-
-      # if file in wav_file_iteration (with split_done = False) is in split_subFolders, it means split was interrupted
-      bad_wav_folders = [file for file in wav_file_iteration if os.path.basename(file).replace(".wav","") in split_subFolders]
       
+      #split_subFolder_names = [os.path.basename(subFolder) for subFolder in split_subFolders]
+     
+      # if file in wav_file_iteration (with split_done = False) is in split_subFolders, it means split was interrupted
+      bad_wav_folders = [path for path in split_subFolders if os.path.basename(path).replace(".wav","") in [os.path.basename(file).replace(".wav","") for file in wav_file_iteration]] 
+      
+      print("   :",(bad_wav_folders))
 
       #   delete all files in bad_wav_folders (.rmtree removes individual wav splits too)
       for file in bad_wav_folders: shutil.rmtree(file) ######
-
+      print("Deleted files in unfinised folders...")
   
 
 #------------------------------------------------------------------
@@ -162,6 +166,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     #---- max len (in seconds), close_th, count (needs to be zero)-------------------
 
     generate_splits(split_dirName, wav_file, max_len, close_th, 0)
+    
     #generate_splits(dirName, wav_file, 210, 1.65, 0) # close_th should probably be adjusted when new custom segment-merge function is used
 
 
@@ -170,7 +175,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     split_time = (time.time() - start_time) / 60
     split_count = len(glob.glob(subdirName+"/*"))
 
-    with open ("trasctioption_log", "r") as f:
+    with open ("transcription_log.json", "r") as f:
       log = json.load(f)
 
 # VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
@@ -178,7 +183,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     #create entry for episode in log
     log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
 
-    with open ("trasctioption_log", "w") as f:
+    with open ("transcription_log.json", "w") as f:
       json.dump(log, f)
   
     print("Split episode", pivot, " out of ", list_len, "(left)")
@@ -200,6 +205,8 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
   print("---" ,time.time() - folder_start_time , " seconds  for splitting entire folder --- \n(some files might be done in prev iterations, check sum of ep logs to determine true duration)  \n")
 
 
+#---------------------------------------------------------------------------------------------------------  
+#---------------------------------------------------------------------------------------------------------
 
 def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
 
