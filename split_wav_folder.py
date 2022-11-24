@@ -68,7 +68,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
         log[dirName]["aprox_podcast_duration_hrs"] = aprox_duration
 
-        with open ("trasctioption_log", "w") as f:
+        with open ("trasctioption_log.json", "w") as f:
           json.dump(log, f)
         #--------------------
 
@@ -180,7 +180,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
 # VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
 
-    #create entry for episode in log
+    #create entry for episode in log. split time is in minutes
     log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
 
     with open ("transcription_log.json", "w") as f:
@@ -189,7 +189,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     print("Split episode", pivot, " out of ", list_len, "(left)")
 
 
-    print("---" ,split_time, " seconds  for splitting " + wav_file + "---"  + "\n")
+    print("---" ,split_time, " minutes  for splitting " + wav_file + "---"  + "\n")
     pivot += 1
 
 
