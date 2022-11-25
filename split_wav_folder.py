@@ -63,17 +63,17 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
         with open ("transcription_log.json", "r") as f:
           log = json.load(f)
 
-        aprox_duration = (sum(duration_of_picks)/4)* len(wav_list) / 3600
+        aprox_duration = round((sum(duration_of_picks)/4)* len(wav_list) / 3600, 2)
 
 
         log[dirName]["aprox_podcast_duration_hrs"] = aprox_duration
 
-        with open ("trasctioption_log.json", "w") as f:
-          json.dump(log, f)
+        with open ("transcription_log.json", "w") as f:
+          json.dump(log, f, indent=4, sort_keys=True)
         #--------------------
 
 
-        print("Aprox. duration of all .wav files in folder:", aprox_duration , "hours \n")
+        print("Aprox. duration of all .wav files in folder:", round(aprox_duration,2) , "hours \n")
  
   else:
 
@@ -172,7 +172,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
     #--------------------------------------------------------------------------------
 
-    split_time = (time.time() - start_time) / 60
+    split_time = round((time.time() - start_time) / 60, 2)
     split_count = len(glob.glob(subdirName+"/*"))
 
     with open ("transcription_log.json", "r") as f:
@@ -181,10 +181,10 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 # VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
 
     #create entry for episode in log. split time is in minutes
-    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "split_count":split_count, "split_time": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
+    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "file_split_count":split_count, "split_time_min": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
 
     with open ("transcription_log.json", "w") as f:
-      json.dump(log, f)
+      json.dump(log, f, indent=4, sort_keys=True)
   
     print("Split episode", pivot, " out of ", list_len, "(left)")
 
@@ -248,7 +248,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
             log[folder_name]["ep_count"] = len(log[folder_name]["files"].keys())
             
             with open("transcription_log.json", "w") as f:
-                json.dump(log, f)
+                json.dump(log, f, indent=4, sort_keys=True)
           #--------------------
         
         else:
@@ -258,7 +258,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
 
             # update json
             with open("transcription_log.json", "w") as f:
-                json.dump(log, f)
+                json.dump(log, f, indent=4, sort_keys=True)
 
             split_podcast_folder(folder_name, max_len, close_th, testing)
           
@@ -271,7 +271,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
             log[folder_name]["ep_count"] = len(log[folder_name]["files"].keys())
             
             with open("transcription_log.json", "w") as f:
-                json.dump(log, f)
+                json.dump(log, f, indent=4, sort_keys=True)
           #--------------------
 
             print("Folder", folder_name, "split. Progress:", fcount, "/", length)

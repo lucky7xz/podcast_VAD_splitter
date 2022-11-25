@@ -9,7 +9,7 @@ import soundfile as sf
 from speechbrain.pretrained import VAD
 
 
-# needed for new. if we only call function below, we get TypeError from VAD
+# EDIT FOR GPU
 VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
 #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
 
@@ -20,17 +20,44 @@ def setup_split_device(dev="cpu", VAD=VAD):
 
     if dev == "cpu":
         #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
-        pass
+        
+        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "r") as f:
+          yaml = f.read() 
+
+        yaml = yaml.replace("device: 'cuda:0'","device: 'cpu'")
+
+
+        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "w") as f:
+          f.write(yaml)
+        
+        print("Split device selected: CPU; yaml file edited")
+
+
     elif dev == "gpu":
-        VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
-        #bam bam @ yaml. check before calling function with dev="gpu"
-        # not ready yet
+
+
+        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
+
+
+        # Edit yaml file to use gpu
+        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "r") as f:
+          yaml = f.read()
+
+        yaml = yaml.replace("device: 'cpu'","device: 'cuda:0'")
+
+        with open("/content/pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "w") as f:
+          f.write(yaml)
+
+        print("Split device selected: GPU; yaml file edited")
+        
+
+
     else:
         print("Please choose between cpu or gpu for splitting")
   
     return dev
 
-def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False): #1.25
+def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 60, testing=False): #1.25
   
   """
   Generate splits from a wav file
@@ -53,9 +80,11 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
 
   else:
     
-    
-    boundaries = VAD.get_speech_segments(wav_file) # returns a list of speech boundaries
-    boundaries = VAD.merge_close_segments(boundaries, close_th) # used to merge close segments
+    #len_th= 20 # len_th = 10 # minimum length of a split (in seconds)
+
+    close_th
+    boundaries = VAD.get_speech_segments(wav_file, len_th=len_th, close_th=close_th) # returns a list of speech boundaries
+    #boundaries = VAD.merge_close_segments(boundaries, close_th) # used to merge close segments
                       # |-------->  This should be replaced by costum function @ VAD_boundaries_config.py
 
     VAD.save_boundaries(boundaries, 
@@ -70,9 +99,11 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
 
   #remove path of wav file, remove .wav extension and remove Xtemp-tag (if present)
   wav_name = wav_file.split("/")[-1].replace(".wav","").split("Xtemp")[0]
-                            
+
+                       
 # often, difficult fragments are not split correctly (eg. 300s_seg - > 296s_seg & 3s_seg).
   while len(vad_edit) < 3:   # This is a workaround for that.
+   
                            
 
     print("\n Prev segment unchanged. Energy split > \n")
@@ -81,6 +112,7 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
     if close_th > 0.30: close_th -= 0.05
           
     boundaries = VAD.energy_VAD(wav_file,boundaries)
+    #
     boundaries = VAD.merge_close_segments(boundaries, close_th)
     
     VAD.save_boundaries(boundaries, 
@@ -101,10 +133,10 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
       # get offset and length
       seg_offset = seg[1]
 
-      if seg_offset > 0.2 : seg_offset -= 0.2 # subtract 0.2 seconds from offset to avoid clipping
+      if seg_offset > 0.3 : seg_offset -= 0.3 # subtract 0.2 seconds from offset to avoid clipping
 
       # add 0.6 seconds to the end of the segment to avoid clipping (not perfect, but atm not a problem. Might be changed in the future)
-      seg_len = seg[4] + 0.60 
+      seg_len = seg[4] + 0.60
       
       # if the length of the segment is smaller than max_len, we can just save the segment as is, and move on to the next segment
       if seg[4] < max_len:
@@ -146,7 +178,7 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, testing=False
        
 
         # generate splits recursively, update count
-        count = generate_splits(split_path,temp_seg_path, max_len, close_th, count)
+        count = generate_splits(split_path,temp_seg_path, max_len, close_th, count, len_th=len_th)
         
 
   return count # return count to keep track of the number of segments
