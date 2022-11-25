@@ -9,16 +9,13 @@ from VAD_wav_splitter import generate_splits, setup_split_device
 
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
-
+  # EDIT FOR GPU
   device = setup_split_device("cpu") # "gpu" for cuda
 
   folder_start_time = time.time()
   
   file_list = glob.glob(dirName+"/*")
   wav_list = glob.glob(dirName+"/*.wav")
-
-  
-  # log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "aprox_podcast_duration_hrs": 0}
 
 
   # clean up checkpoint files created by VAD model (if any)

@@ -9,53 +9,49 @@ import soundfile as sf
 from speechbrain.pretrained import VAD
 
 
-# EDIT FOR GPU
+# EDIT FOR GPU  ---> # integrating this into setup_split_device() raises an error. Not sure why. For now, well just call it separately
 VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
 #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
-
-# use cpu or gpu for splitting 
 
 
 def setup_split_device(dev="cpu", VAD=VAD):
 
+    '''
+    dev: "cpu" or "cuda"
+
+     yaml file in pretrained_models folder (created after first init)
+     has to be edited if we want to use GPU for VAD inference (boundaries
+     for splitting)
+
+    '''
+    
+    with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "r") as f:
+        yaml = f.read() 
+
     if dev == "cpu":
-        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
         
-        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "r") as f:
-          yaml = f.read() 
-
         yaml = yaml.replace("device: 'cuda:0'","device: 'cpu'")
-
-
-        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "w") as f:
-          f.write(yaml)
-        
-        print("Split device selected: CPU; yaml file edited")
-
+        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
+        print("\nSplit device selected: CPU; yaml file edited")
 
     elif dev == "gpu":
-
-
-        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
-
-
-        # Edit yaml file to use gpu
-        with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "r") as f:
-          yaml = f.read()
-
+      
         yaml = yaml.replace("device: 'cpu'","device: 'cuda:0'")
-
-        with open("/content/pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "w") as f:
-          f.write(yaml)
-
-        print("Split device selected: GPU; yaml file edited")
-        
-
-
+        #VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
+        print("\nSplit device selected: GPU; yaml file edited")
+    
     else:
-        print("Please choose between cpu or gpu for splitting")
-  
+
+        raise ValueError("Invalid device selection. Please input 'cpu' or 'gpu' in setup_split_device()")
+
+
+    with open("pretrained_models/vad-crdnn-libriparty/hyperparams.yaml", "w") as f:
+        f.write(yaml)
+
     return dev
+
+
+
 
 def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 60, testing=False): #1.25
   
