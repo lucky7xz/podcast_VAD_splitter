@@ -10,7 +10,7 @@ from VAD_wav_splitter import generate_splits, setup_split_device
 def split_podcast_folder(dirName, max_len, close_th, testing=False):
 
   # EDIT FOR GPU
-  device = setup_split_device("cpu") # "gpu" for cuda
+  device = setup_split_device("gpu") # "gpu" for cuda
 
   folder_start_time = time.time()
   

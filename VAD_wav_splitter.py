@@ -10,8 +10,8 @@ from speechbrain.pretrained import VAD
 
 
 # EDIT FOR GPU  ---> # integrating this into setup_split_device() raises an error. Not sure why. For now, well just call it separately
-VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
-#VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
+#VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty")
+VAD = VAD.from_hparams(source="speechbrain/vad-crdnn-libriparty", savedir="pretrained_models/vad-crdnn-libriparty", run_opts={"device":"cuda"})
 
 
 def setup_split_device(dev="cpu", VAD=VAD):
