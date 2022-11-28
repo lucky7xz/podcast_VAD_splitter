@@ -1,3 +1,6 @@
-politics_weekly_uk_wav
+australian_politics_wav
 on_with_kara_swisher_wav
 pitchfork_economics_wav
+politics_weekly_uk_wav
+politics_weekly_america_wav
+science_weekly_wav
