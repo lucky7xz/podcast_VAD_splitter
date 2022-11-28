@@ -53,7 +53,7 @@ def setup_split_device(dev="cpu", VAD=VAD):
 
 
 
-def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 60, testing=False): #1.25
+def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 15, testing=False): 
   
   """
   Generate splits from a wav file
@@ -129,7 +129,7 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 60, 
       # get offset and length
       seg_offset = seg[1]
 
-      if seg_offset > 0.3 : seg_offset -= 0.3 # subtract 0.2 seconds from offset to avoid clipping
+      if seg_offset > 0.3 : seg_offset -= 0.2 # subtract 0.2 seconds from offset to avoid clipping
 
       # add 0.6 seconds to the end of the segment to avoid clipping (not perfect, but atm not a problem. Might be changed in the future)
       seg_len = seg[4] + 0.60

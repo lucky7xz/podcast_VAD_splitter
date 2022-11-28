@@ -14,7 +14,7 @@ def read_and_split():
     
     podcast_folders = [x.strip() for x in podcast_folders]
 
-    max_len = 210 # max length of segments in seconds
+    max_len = 400 # max length of segments in seconds
     close_th = 1.65 # threshold for merging segments (in seconds)
 
 

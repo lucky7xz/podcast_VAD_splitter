@@ -183,7 +183,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
     with open ("transcription_log.json", "w") as f:
       json.dump(log, f, indent=4, sort_keys=True)
   
-    print("Split episode", pivot, " out of ", list_len, "(left)")
+    print("Split episode", pivot, " out of ", list_len, "(left out of total in folder)")
 
 
     print("---" ,split_time, " minutes  for splitting " + wav_file + "---"  + "\n")
