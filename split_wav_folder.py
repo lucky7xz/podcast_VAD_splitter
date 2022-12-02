@@ -109,7 +109,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
   else:
       print("Directory " , split_dirName ,  " already exists")
       split_subFolders = glob.glob(split_dirName + "/*")
-      print("Subfolders in split folder: ", split_subFolders) # for debugging
+      #print("Subfolders in split folder: ", split_subFolders) # for debugging
 
       print("Deleting files in unfinised folders...")
       
