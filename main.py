@@ -1,7 +1,7 @@
 
 from split_wav_folder import split_podcast_folders
 import os
-#from transcribe_pod_folders import transcribe_splitPodcast_folders
+from transcribe_pod_folders import transcribe_all_folders
 
 from speechbrain.pretrained import VAD
 #--- Split wav files into segments
@@ -30,14 +30,11 @@ def read_and_split():
 
 
 read_and_split()
-#clear_split_done() # only if we want to split the same folders again
 
 #------ Transcribe segments and add punctuation
 
-# we can re-use the podcast_folders.txt. 
-# Split folders have the same name, except for the "_split" suffix
+transcribe_all_folders()
 
-#transcribe_splitPodcast_folders("podcast_folders.txt")
 
 print(" The size of the split folders may be too large to keep., \n Consider deleting the split folders after transcribing them. \n Or keep them for future transcriptions with different models.")
 

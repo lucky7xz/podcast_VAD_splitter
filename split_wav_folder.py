@@ -178,7 +178,7 @@ def split_podcast_folder(dirName, max_len, close_th, testing=False):
 # VMASSCVV: title, split_done, split_type, split_count, split_duration, transcription, transcription_type
 
     #create entry for episode in log. split time is in minutes
-    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "file_split_count":split_count, "split_time_min": split_time, "split_type":device}# "transc_type": "", "transcription": ""}
+    log[dirName]["files"][wav_name] = {"title": "", "split_done": True, "file_split_count":split_count, "split_time_min": split_time, "split_type":device, "transc_type": "", "transc_done": False}
 
     with open ("transcription_log.json", "w") as f:
       json.dump(log, f, indent=4, sort_keys=True)
@@ -251,7 +251,7 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
         else:
 
           #--- initiate log dict for folder (aprox_podcast_duration is added in split_podcast_folder function)
-            log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "aprox_podcast_duration_hrs": 0}
+            log[folder_name] = {"files":{}, "split_done": False, "ep_count":0, "transc_done": False, "aprox_podcast_duration_hrs": 0}
 
             # update json
             with open("transcription_log.json", "w") as f:
@@ -274,18 +274,8 @@ def split_podcast_folders(path_to_folders, max_len, close_th, testing=False):
             print("Folder", folder_name, "split. Progress:", fcount, "/", length)
 
 
-def clear_log():
 
-  if True:
-    pass
-
-  return 0
-
-
-
-
-
-  '''
+    '''
 
 json dict structure and init
 

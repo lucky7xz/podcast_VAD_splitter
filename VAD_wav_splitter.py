@@ -103,8 +103,7 @@ def generate_splits(split_path,wav_file, max_len, close_th, count, len_th = 15, 
                            
 
     print("\n Prev segment unchanged. Energy split > \n")
-    # Problem valuable seconds in the while loop at the end. that is problematic
-
+    
     if close_th > 0.30: close_th -= 0.05
           
     boundaries = VAD.energy_VAD(wav_file,boundaries)
