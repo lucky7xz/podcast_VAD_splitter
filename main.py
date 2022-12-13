@@ -34,6 +34,7 @@ read_and_split()
 #------ Transcribe segments and add punctuation
 
 transcribe_all_folders()
+# installing ffmpeg didn't help
 
 
 print(" The size of the split folders may be too large to keep., \n Consider deleting the split folders after transcribing them. \n Or keep them for future transcriptions with different models.")
